@@ -9,14 +9,6 @@ import java.io.IOException;
 
 public class Utils {
 
-    /*
-type TranslationParameters = collection.immutable.Map[String, collection.mutable.Map[String, Double]]
-type AlignmentParameters = collection.immutable.Map[(Int, Int, Int, Int), Double]
-
-type MutableTranslationParameters = collection.mutable.Map[String, collection.mutable.Map[String, Double]]
-type MutableAlignmentParameters = collection.mutable.Map[(Int, Int, Int, Int), Double]
-*/
-
     public static final String NULL = "NULL";
 
     public static void loopThroughFiles(String file1Path, String file2Path, Function<Triplet<String, String, Integer>, Void> funcToPerform) {
