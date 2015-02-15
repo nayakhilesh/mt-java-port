@@ -1,209 +1,251 @@
 package com.github.nayakhilesh;
 
-import java.util.BitSet
-import collection.mutable.ArrayBuffer
-import scala.collection.immutable.Seq
+import com.google.common.base.Joiner;
+import com.google.common.base.Optional;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterators;
+import lombok.Value;
+import org.javatuples.Pair;
 
-class Decoder(val lexicon: Lexicon, val languageModel: TrigramLanguageModel,
-              val distortionLimit: Int, val distortionPenalty: Double, val beamWidth: Double) {
+import java.util.*;
 
-  System.out.println("Created decoder with distortionLimit=" + distortionLimit +
-    ", distortionPenalty=" + distortionPenalty + ", beamWidth=" + beamWidth)
+public class Decoder {
 
-  def decode(line: String): String = {
+    private Lexicon lexicon;
+    private TrigramLanguageModel languageModel;
+    private int distortionLimit;
+    private double distortionPenalty;
+    private double beamWidth;
 
-    val words = line split " "
-    val n = words.size
-    val beams = ArrayBuffer.fill(n + 1)(new Beam(beamWidth))
+    public Decoder(Lexicon lexicon, TrigramLanguageModel languageModel,
+                   int distortionLimit, double distortionPenalty, double beamWidth) {
 
-    val q0 = new State(TrigramLanguageModel.BeforeSymbol, TrigramLanguageModel.BeforeSymbol,
-      new BitSet(n), 0, 0)
-    beams(0).addState(q0)
+        this.lexicon = lexicon;
+        this.languageModel = languageModel;
+        this.distortionLimit = distortionLimit;
+        this.distortionPenalty = distortionPenalty;
+        this.beamWidth = beamWidth;
 
-    // back-pointers
-    val bp = collection.mutable.Map[State, (State, Phrase)]()
+        System.out.println("Created decoder with distortionLimit=" + distortionLimit +
+                ", distortionPenalty=" + distortionPenalty + ", beamWidth=" + beamWidth);
+    }
 
-    0 to (n - 1) foreach {
-      i =>
-        beams(i).states foreach {
-          q =>
-            ph(q, words) foreach {
-              p =>
-                val q1 = next(q, p, words)
-                val j = q1.bitString.cardinality
-                add(beams(j), q1, q, p, bp)
+    public String decode(String line) {
+
+        List<String> words = Arrays.asList(line.split(" "));
+        int n = words.size();
+        List<Beam> beams = new ArrayList<Beam>();
+        for (int i = 0; i < n + 1; i++) {
+            beams.add(new Beam(beamWidth));
+        }
+
+        Beam.State q0 = new Beam.State(TrigramLanguageModel.BEFORE_SYMBOL, TrigramLanguageModel.BEFORE_SYMBOL,
+                new BitSet(n), 0, 0);
+        beams.get(0).addState(q0);
+
+        // back-pointers
+        Map<Beam.State, Pair<Beam.State, Phrase>> bp = new HashMap<Beam.State, Pair<Beam.State, Phrase>>();
+
+        for (int i = 0; i < n; i++) {
+            for (Beam.State q : beams.get(i).getStates()) {
+                for (Phrase p : ph(q, words)) {
+                    Beam.State q1 = next(q, p, words);
+                    int j = q1.bitString.cardinality();
+                    add(beams.get(j), q1, q, p, bp);
+                }
             }
         }
-    }
 
-    beams.reverseIterator.find(_.states.size > 0) match {
-      case None => "No translation found"
-      case Some(beam) =>
-        val maxState = beam.states maxBy (_.score)
+        for (int i = beams.size() - 1; i >= 0; i--) {
 
-        def follow(q: State): collection.mutable.TreeSet[Phrase] =
-          bp.getOrElse(q, null) match {
-            case null => collection.mutable.TreeSet.empty(Phrase.sortByPosition)
-            case (q1, p) => follow(q1) + p
-          }
+            Beam beam = beams.get(i);
+            if (beam.getStates().size() > 0) {
 
-        val phrases = follow(maxState)
+                Beam.State maxState = Collections.max(beam.getStates(), new Comparator<Beam.State>() {
+                    @Override
+                    public int compare(Beam.State o1, Beam.State o2) {
+                        if (o1.score > o2.score) {
+                            return 1;
+                        } else if (o1.score < o2.score) {
+                            return -1;
+                        }
+                        return 0;
+                    }
+                });
 
-        val translatedLine = collection.mutable.StringBuilder.newBuilder
+                Set<Phrase> phrases = new TreeSet<Phrase>();
+                Beam.State initialState = maxState;
+                while (initialState != null) {
+                    Pair<Beam.State, Phrase> pair = bp.get(initialState);
+                    initialState = pair.getValue0();
+                    Phrase p = pair.getValue1();
+                    phrases.add(p);
+                }
 
-        var index = 0
-        while (index < words.length) {
-          phrases find (p => (p.lang1Start <= index + 1) && (index + 1 <= p.lang1End)) match {
-            case None => translatedLine.append(words(index) + " ")
-              index += 1
-            case Some(phrase) => translatedLine.append(phrase.lang2Words.mkString(" ") + " ")
-              phrases.remove(phrase)
-              index = phrase.lang1End
-          }
-        }
+                StringBuilder translatedLine = new StringBuilder();
 
-        // remove trailing space
-        if (translatedLine.length > 0) {
-          translatedLine.setLength(translatedLine.length - 1)
-        }
+                int index = 0;
+                while (index < words.size()) {
 
-        translatedLine.replaceAllLiterally("*", "").toString
-    }
-  }
+                    final int finalIndex = index;
+                    Optional<Phrase> phraseOptional = Iterators.tryFind(phrases.iterator(), new Predicate<Phrase>() {
+                        @Override
+                        public boolean apply(Phrase p) {
+                            return (p.lang1Start <= finalIndex + 1) && (finalIndex + 1 <= p.lang1End);
+                        }
+                    });
 
-  private[this] def ph(q: State, wordsLang1: Array[String]): collection.Set[Phrase] = {
+                    if (phraseOptional.isPresent()) {
+                        Phrase phrase = phraseOptional.get();
+                        translatedLine.append(Joiner.on(" ").join(phrase.lang2Words)).append(" ");
+                        phrases.remove(phrase);
+                        index = phrase.lang1End;
+                    } else {
+                        translatedLine.append(words.get(index)).append(" ");
+                        index++;
+                    }
 
-    val phrases = collection.mutable.Set[Phrase]()
-    //(r + 1) - d <= s <= (r + 1) + d
-    math.max((q.prevEnd + 1 - distortionLimit), 0) to
-      math.min((q.prevEnd + 1 + distortionLimit), wordsLang1.size - 1) foreach {
-      start =>
-        var end = start
-        var overlap = false
-        while (end < wordsLang1.size && !overlap) {
-          val nextSet = q.bitString.nextSetBit(start)
-          if (nextSet == -1 || nextSet > end) {
-            val lang2WordsSet = lexicon.getTranslation(wordsLang1.slice(start, end + 1).toIndexedSeq)
-            if (lang2WordsSet != null) {
-              lang2WordsSet foreach (
-                lang2Words =>
-                  phrases.add(new Phrase(start + 1, end + 1, lang2Words)))
+                }
+
+                // remove trailing space
+                if (translatedLine.length() > 0) {
+                    translatedLine.setLength(translatedLine.length() - 1);
+                }
+
+                return translatedLine.toString().replace('*', ' ');
             }
-          } else {
-            overlap = true
-          }
-          end += 1
+
+        }
+
+        return "No translation found";
+    }
+
+    private Set<Phrase> ph(Beam.State q, List<String> wordsLang1) {
+
+        Set<Phrase> phrases = new HashSet<Phrase>();
+        //(r + 1) - d <= s <= (r + 1) + d
+        for (int start = Math.max((q.prevEnd + 1 - distortionLimit), 0);
+             start <= Math.min((q.prevEnd + 1 + distortionLimit), wordsLang1.size() - 1); start++) {
+            int end = start;
+            boolean overlap = false;
+            while (end < wordsLang1.size() && !overlap) {
+                int nextSet = q.bitString.nextSetBit(start);
+                if (nextSet == -1 || nextSet > end) {
+                    Set<List<String>> lang2WordsSet = lexicon.getTranslation(wordsLang1.subList(start, end + 1));
+                    if (lang2WordsSet != null) {
+                        for (List<String> lang2Words : lang2WordsSet) {
+                            phrases.add(new Phrase(start + 1, end + 1, lang2Words));
+                        }
+                    }
+                } else {
+                    overlap = true;
+                }
+                end++;
+            }
+        }
+
+        return phrases;
+    }
+
+    private void add(Beam beam, Beam.State q1, Beam.State q, Phrase p,
+                     Map<Beam.State, Pair<Beam.State, Phrase>> bp) {
+
+        Beam.State existing = beam.getState(q1);
+        if (existing == null) {
+            beam.addState(q1);
+            bp.put(q1, new Pair<Beam.State, Phrase>(q, p));
+        } else if (q1.score > existing.score) {
+            beam.removeState(existing);
+            beam.addState(q1);
+            bp.put(q1, new Pair<Beam.State, Phrase>(q, p));
+        }
+        if (q1.score > beam.max) {
+            beam.max = q1.score;
+            beam.purge();
         }
     }
 
-    phrases
-  }
+    private Beam.State next(Beam.State q, Phrase p, List<String> wordsLang1) {
+        int numWords = p.lang2Words.size();
+        if (numWords == 0 || p.lang1Start > p.lang1End) {
+            throw new IllegalArgumentException();
+        }
 
-  private[this] def add(beam: Beam, q1: State, q: State, p: Phrase,
-                        bp: collection.mutable.Map[State, (State, Phrase)]) {
+        String newWord1 = numWords == 1 ? q.word2 : p.lang2Words.get(numWords - 2);
+        String newWord2 = p.lang2Words.get(p.lang2Words.size() - 1);
+        BitSet newBitString = (BitSet) q.bitString.clone();
+        newBitString.set(p.lang1Start - 1, p.lang1End);
+        int newPrevEnd = p.lang1End;
+        double newScore = q.score + lexicon.estimate(wordsLang1.subList(p.lang1Start - 1, p.lang1End), p.lang2Words) +
+                languageModel.estimate(p.lang2Words) + (distortionPenalty * Math.abs(q.prevEnd + 1 - p.lang1Start));
 
-    val existing = beam.getStateOrElse(q1, null)
-    if (existing == null) {
-      beam.addState(q1)
-      bp(q1) = (q -> p)
-    } else if (q1.score > existing.score) {
-      beam.removeState(existing)
-      beam.addState(q1)
-      bp(q1) = (q -> p)
+        return new Beam.State(newWord1, newWord2, newBitString, newPrevEnd, newScore);
     }
-    if (q1.score > beam.max) {
-      beam.max = q1.score
-      beam.purge()
+
+    private static class Beam {
+
+        @Value
+        private static class State {
+
+            private String word1;
+            private String word2;
+            private BitSet bitString;
+            private int prevEnd;
+            private double score;
+
+        }
+
+        private double width;
+        private double max;
+        private Map<State, State> map;
+
+        public Beam(double width) {
+            this.width = width;
+            this.max = -1.0;
+            this.map = new HashMap<State, State>();
+        }
+
+        public void addState(State state) {
+            map.put(state, state);
+        }
+
+        public void removeState(State state) {
+            map.remove(state);
+        }
+
+        public State getState(State state) {
+            return map.get(state);
+        }
+
+        public Set<State> getStates() {
+            return map.keySet();
+        }
+
+        public void purge() {
+            for (Iterator<State> iter = map.keySet().iterator(); iter.hasNext(); ) {
+                State state = iter.next();
+                if (state.getScore() < max - width) {
+                    iter.remove();
+                }
+            }
+        }
+
     }
-  }
 
-  private[this] def next(q: State, p: Phrase, wordsLang1: Array[String]): State = {
-    val numWords = p.lang2Words.size
-    if (numWords == 0 || p.lang1Start > p.lang1End)
-      throw new IllegalArgumentException
+    //start and end are 1 indexed
+    //i.e. start..end (inclusive) in lang1 is translated as lang2Words
+    @Value
+    private class Phrase implements Comparable<Phrase> {
 
-    val newWord1 = if (numWords == 1) q.word2 else p.lang2Words(numWords - 2)
-    val newWord2 = p.lang2Words.last
-    val newBitString = q.bitString.clone().asInstanceOf[BitSet]
-    newBitString.set(p.lang1Start - 1, p.lang1End)
-    val newPrevEnd = p.lang1End
-    val newScore = q.score + lexicon.estimate(wordsLang1.slice(p.lang1Start - 1, p.lang1End).toIndexedSeq, p.lang2Words) +
-      languageModel.estimate(p.lang2Words) + (distortionPenalty * math.abs(q.prevEnd + 1 - p.lang1Start))
+        private int lang1Start;
+        private int lang1End;
+        private List<String> lang2Words;
 
-    new State(newWord1, newWord2, newBitString, newPrevEnd, newScore)
-  }
+        @Override
+        public int compareTo(Phrase o) {
+            return this.lang1Start - o.lang1Start;
+        }
+    }
 
 }
 
-class Beam(val width: Double) {
-
-  var max = -1.0
-  private[this] val map = collection.mutable.Map[State, State]()
-
-  def addState(state: State) {
-    map.put(state, state)
-  }
-
-  def removeState(state: State) {
-    map.remove(state)
-  }
-
-  def getStateOrElse(state: State, default: State) = {
-    map.getOrElse(state, null)
-  }
-
-  def states = map.keys
-
-  def purge() {
-    map.retain((k, v) => k.score >= max - width)
-  }
-
-}
-
-object Phrase {
-  val sortByPosition = new Ordering[Phrase] {
-    def compare(o1: Phrase, o2: Phrase) = o1.lang1Start.compare(o2.lang1Start)
-  }
-}
-
-//start and end are 1 indexed
-//i.e. start..end (inclusive) in lang1 is translated as lang2Words
-class Phrase(val lang1Start: Int, val lang1End: Int, val lang2Words: Seq[String]) extends Equals {
-
-  def canEqual(other: Any): Boolean = other.isInstanceOf[Phrase]
-
-  override def equals(other: Any): Boolean = other match {
-    case that: Phrase =>
-      (that canEqual this) &&
-        lang1Start == that.lang1Start &&
-        lang1End == that.lang1End &&
-        lang2Words == that.lang2Words
-    case _ => false
-  }
-
-  override def hashCode(): Int = {
-    val state = Seq(lang1Start, lang1End, lang2Words)
-    state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
-  }
-}
-
-class State(val word1: String, val word2: String, val bitString: BitSet,
-            val prevEnd: Int, val score: Double) extends Equals {
-
-  def canEqual(other: Any): Boolean = other.isInstanceOf[State]
-
-  override def equals(other: Any): Boolean = other match {
-    case that: State =>
-      (that canEqual this) &&
-        word1 == that.word1 &&
-        word2 == that.word2 &&
-        bitString == that.bitString &&
-        prevEnd == that.prevEnd
-    case _ => false
-  }
-
-  override def hashCode(): Int = {
-    val state = Seq(word1, word2, bitString, prevEnd)
-    state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
-  }
-}

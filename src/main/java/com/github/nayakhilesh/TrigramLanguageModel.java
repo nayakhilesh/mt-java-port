@@ -11,7 +11,7 @@ import java.util.*;
 public class TrigramLanguageModel {
 
     // constants
-    private static final String BEFORE_SYMBOL = "*";
+    public static final String BEFORE_SYMBOL = "*";
     private static final String AFTER_SYMBOL = "STOP";
     private static final double VALIDATION_DATA_FRACTION = 0.05;
     private static final double EPSILON = 10E-6;
