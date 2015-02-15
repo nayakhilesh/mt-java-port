@@ -1,178 +1,168 @@
 package com.github.nayakhilesh;
 
-import java.io.BufferedWriter
-import java.io.File
-import java.io.FileOutputStream
-import java.io.OutputStreamWriter
 
-import scala.Array.canBuildFrom
-import scala.compat.Platform
-import scala.io.Source
+import com.google.common.base.Function;
+import org.javatuples.Pair;
+import org.javatuples.Quartet;
+import org.javatuples.Triplet;
 
-import com.github.nayakhilesh;.Utils._
-import scala.collection.immutable
+import java.util.*;
 
-object IbmModel2 {
+public class IbmModel2 {
 
-  def apply(lang1FilePath: String, lang2FilePath: String, numIterations: Int,
-            initialTranslationParams: MutableTranslationParameters = null,
-            initialAlignmentParams: MutableAlignmentParameters = null) =
-    new IbmModel2(computeParams(lang1FilePath, lang2FilePath, numIterations, initialTranslationParams, initialAlignmentParams))
+    private Map<String, Map<String, Double>> translationParams;
+    private Map<Quartet<Integer, Integer, Integer, Integer>, Double> alignmentParams;
 
-  def apply(filePath: String) =
-    new IbmModel2(readParams(filePath))
+    public IbmModel2(String lang1FilePath, String lang2FilePath,
+                     int numIterations, Map<String, Map<String, Double>> initialTranslationParams) {
 
-  private[this] def computeParams(lang1FilePath: String, lang2FilePath: String, numIterations: Int,
-                                  initialTranslationParams: MutableTranslationParameters,
-                                  initialAlignmentParams: MutableAlignmentParameters) = {
+        this.translationParams = initialTranslationParams;
+        this.alignmentParams = DefaultAlignmentParams.getDefaultAlignmentParams(lang1FilePath, lang2FilePath);
 
-    val translationParams =
-      if (initialTranslationParams == null)
-        DefaultTranslationParams.getDefaultTranslationParams(lang1FilePath, lang2FilePath)
-      else
-        initialTranslationParams
-
-    val alignmentParams =
-      if (initialAlignmentParams == null)
-        DefaultAlignmentParams.getDefaultAlignmentParams(lang1FilePath, lang2FilePath)
-      else
-        initialAlignmentParams
-
-    val startEm = System.currentTimeMillis();
-
-    val temp = translationParams.toSeq.flatMap {
-      case (word1, map) =>
-        map.foldLeft(List[(String, String)]()) {
-          case (list, (word2, _)) => (word1, word2) +: list
+        long startEm = System.currentTimeMillis();
+        List<Pair<String, String>> temp = new ArrayList<Pair<String, String>>();
+        for (Map.Entry<String, Map<String, Double>> entry : translationParams.entrySet()) {
+            String word1 = entry.getKey();
+            Map<String, Double> map = entry.getValue();
+            for (String word2 : map.keySet()) {
+                temp.add(new Pair<String, String>(word1, word2));
+            }
         }
-    }
 
-    val tempAlign = alignmentParams.keys
+        Set<Quartet<Integer, Integer, Integer, Integer>> tempAlign = alignmentParams.keySet();
 
-    System.out.println("also number of lang2|lang1 combinations in translationParams:" + temp.size)
-    System.out.println("also number of 4-tuples in alignmentParams:" + tempAlign.size)
+        System.out.println("also number of lang2|lang1 combinations in translationParams:" + temp.size());
+        System.out.println("also number of 4-tuples in alignmentParams:" + tempAlign.size());
 
-    1 to numIterations foreach {
-      iter =>
-        System.out.println("Starting iteration #" + iter)
+        for (int iter = 0; iter < numIterations; iter++) {
 
-        val c1 = collection.mutable.Map[String, Double]()
-        val c2 = collection.mutable.Map[(String, String), Double]()
-        val c3 = collection.mutable.Map[(Int, Int, Int), Double]()
-        val c4 = collection.mutable.Map[(Int, Int, Int, Int), Double]()
+            System.out.println("Starting iteration #" + iter);
 
-        loopThroughFiles(lang1FilePath, lang2FilePath) {
-          (line1, line2, index) =>
+            final Map<String, Double> c1 = new HashMap<String, Double>();
+            final Map<Pair<String, String>, Double> c2 = new HashMap<Pair<String, String>, Double>();
+            final Map<Triplet<Integer, Integer, Integer>, Double> c3 = new HashMap<Triplet<Integer, Integer, Integer>, Double>();
+            final Map<Quartet<Integer, Integer, Integer, Integer>, Double> c4 = new HashMap<Quartet<Integer, Integer, Integer, Integer>, Double>();
 
-            val arr1 = line1 split " "
-            val size1 = arr1.size
-            val nullPrefixedArr1 = NULL +: arr1
+            Utils.loopThroughFiles(lang1FilePath, lang2FilePath, new Function<Triplet<String, String, Integer>, Void>() {
+                @Override
+                public Void apply(Triplet<String, String, Integer> triplet) {
 
-            val arr2 = line2 split " "
-            val size2 = arr2.size
+                    String line1 = triplet.getValue0();
+                    String line2 = triplet.getValue1();
 
-            arr2.iterator.zipWithIndex foreach {
-              case (word2, index2) =>
+                    List<String> words1 = Arrays.asList(line1.split(" "));
+                    int size1 = words1.size();
+                    List<String> nullPrefixedWords1 = new ArrayList<String>();
+                    nullPrefixedWords1.add(Utils.NULL);
+                    nullPrefixedWords1.addAll(words1);
 
-                val denom = nullPrefixedArr1.iterator.zipWithIndex.foldLeft(0.0) {
-                  case (acc, (word1, index1)) =>
-                    acc + (alignmentParams((index1, index2 + 1, size1, size2)) * translationParams(word1)(word2))
+                    List<String> words2 = Arrays.asList(line2.split(" "));
+                    int size2 = words2.size();
+
+                    for (int index2 = 0; index2 < words2.size(); index2++) {
+                        String word2 = words2.get(index2);
+
+                        double denom = 0.0;
+                        for (int index1 = 0; index1 < nullPrefixedWords1.size(); index1++) {
+                            String word1 = nullPrefixedWords1.get(index1);
+                            denom += (alignmentParams.get(new Quartet<Integer, Integer, Integer, Integer>(index1, index2 + 1, size1, size2)) *
+                                    translationParams.get(word1).get(word2));
+                        }
+                        for (int index1 = 0; index1 < nullPrefixedWords1.size(); index1++) {
+                            String word1 = nullPrefixedWords1.get(index1);
+                            Quartet<Integer, Integer, Integer, Integer> quartet = new Quartet<Integer, Integer, Integer, Integer>(index1, index2 + 1, size1, size2);
+                            double delta = (alignmentParams.get(quartet) *
+                                    translationParams.get(word1).get(word2)) / denom;
+                            Pair<String, String> pair = new Pair<String, String>(word1, word2);
+                            if (c2.containsKey(pair)) {
+                                c2.put(pair, c2.get(pair) + delta);
+                            } else {
+                                c2.put(pair, delta);
+                            }
+                            if (c1.containsKey(word1)) {
+                                c1.put(word1, c1.get(word1) + delta);
+                            } else {
+                                c1.put(word1, delta);
+                            }
+                            if (c4.containsKey(quartet)) {
+                                c4.put(quartet, c4.get(quartet) + delta);
+                            } else {
+                                c4.put(quartet, delta);
+                            }
+                            Triplet<Integer, Integer, Integer> triplet1 = new Triplet<Integer, Integer, Integer>(index2 + 1, size1, size2);
+                            if (c3.containsKey(triplet1)) {
+                                c3.put(triplet1, c3.get(triplet1) + delta);
+                            } else {
+                                c3.put(triplet1, delta);
+                            }
+                        }
+                    }
+
+                    return null;
                 }
-                nullPrefixedArr1.iterator.zipWithIndex foreach {
-                  case (word1, index1) =>
-                    val delta = (alignmentParams((index1, index2 + 1, size1, size2)) * translationParams(word1)(word2)) / denom
-                    c2((word1, word2)) = c2.getOrElse((word1, word2), 0.0) + delta
-                    c1(word1) = c1.getOrElse(word1, 0.0) + delta
-                    c4((index1, index2 + 1, size1, size2)) = c4.getOrElse((index1, index2 + 1, size1, size2), 0.0) + delta
-                    c3((index2 + 1, size1, size2)) = c3.getOrElse((index2 + 1, size1, size2), 0.0) + delta
-                }
+            });
 
+            for (Pair<String, String> pair : temp) {
+                String word1 = pair.getValue0();
+                String word2 = pair.getValue1();
+                translationParams.get(word1).put(word2, c2.get(pair) / c1.get(word1));
             }
 
+            for (Quartet<Integer, Integer, Integer, Integer> quartet : tempAlign) {
+                int index2 = quartet.getValue1();
+                int size1 = quartet.getValue2();
+                int size2 = quartet.getValue3();
+                Triplet<Integer, Integer, Integer> triplet = new Triplet<Integer, Integer, Integer>(index2, size1, size2);
+                alignmentParams.put(quartet, c4.get(quartet) / c3.get(triplet));
+            }
+
+            System.out.println("Finished iteration #" + iter);
         }
 
-        temp foreach {
-          case (word1, word2) =>
-            translationParams(word1)(word2) = c2((word1, word2)) / c1(word1)
+        System.out.println("number of lang1 words in translationParams:" + translationParams.size());
+        int sum = 0;
+        for (Map<String, Double> map : translationParams.values()) {
+            sum += map.size();
         }
+        System.out.println("number of lang2|lang1 combinations in translationParams:" + sum);
+        System.out.println("number of 4-tuples in alignmentParams:" + alignmentParams.size());
 
-        tempAlign foreach {
-          case (index1, index2, size1, size2) =>
-            alignmentParams((index1, index2, size1, size2)) = c4((index1, index2, size1, size2)) / c3((index2, size1, size2))
-        }
+        long endEm = System.currentTimeMillis();
 
-        System.out.println("Finished iteration #" + iter)
+        System.out.println("EM time=" + (endEm - startEm) / 1000.0 + "s");
     }
 
-    System.out.println("number of lang1 words in translationParams:" + translationParams.size)
-    System.out.println("number of lang2|lang1 combinations in translationParams:" +
-      translationParams.foldLeft(0) {
-        case (acc, (_, map)) => acc + map.size
-      })
+    public List<Integer> extractAlignments(String line1, String line2) {
 
-    System.out.println("number of 4-tuples in alignmentParams:" + alignmentParams.size)
+        List<String> words2 = Arrays.asList(line2.split(" "));
+        int size2 = words2.size();
 
-    val endEm = System.currentTimeMillis();
+        List<String> words1 = Arrays.asList(line1.split(" "));
+        int size1 = words1.size();
 
-    System.out.println("EM time=" + (endEm - startEm) / 1000.0 + "s")
+        List<String> nullPrefixedWords1 = new ArrayList<String>();
+        nullPrefixedWords1.add(Utils.NULL);
+        nullPrefixedWords1.addAll(words1);
 
-    (translationParams.toMap, alignmentParams.toMap)
-  }
+        List<Integer> list = new ArrayList<Integer>();
+        for (int index2 = 0; index2 < words2.size(); index2++) {
+            String word2 = words2.get(index2);
 
-}
-
-class IbmModel2(private[this] val params: (TranslationParameters, AlignmentParameters)) extends IbmModelLike {
-
-  val translationParams = params._1
-  val alignmentParams = params._2
-
-  override def extractAlignments(line1: String, line2: String): immutable.Seq[Int] = {
-
-    val arr2 = line2 split " "
-    val size2 = arr2.size
-
-    val mappedArray = arr2.iterator.zipWithIndex map {
-      case (word2, index2) =>
-
-        val arr1 = line1 split " "
-        val size1 = arr1.size
-
-        val (_, maxIndex) = (NULL +: arr1).iterator.zipWithIndex.maxBy {
-          case (word1, index1) => alignmentParams((index1, index2 + 1, size1, size2)) * translationParams(word1)(word2)
+            int maxIndex = 0;
+            double maxValue = Double.MIN_VALUE;
+            for (int index1 = 0; index1 < nullPrefixedWords1.size(); index1++) {
+                String word1 = nullPrefixedWords1.get(index1);
+                Quartet<Integer, Integer, Integer, Integer> quartet = new Quartet<Integer, Integer, Integer, Integer>(index1, index2 + 1, size1, size2);
+                double value = alignmentParams.get(quartet) * translationParams.get(word1).get(word2);
+                if (value > maxValue) {
+                    maxIndex = index1;
+                    maxValue = value;
+                }
+            }
+            list.add(maxIndex);
         }
 
-        maxIndex
+        return list;
     }
-
-    mappedArray.toVector
-  }
-
-  override def writeParams(outputFilePath: String) {
-
-    System.out.println("Writing params to file")
-
-    val out = new BufferedWriter(new OutputStreamWriter(
-      new FileOutputStream(new File(outputFilePath)), "UTF8"))
-
-    translationParams.foreach {
-      case (word1, map) =>
-        map.foreach {
-          case (word2, prob) => out.write(word1 + " " + word2 + " " + prob + "\n")
-        }
-    }
-
-    out.write("\n")
-
-    alignmentParams.foreach {
-      case ((index2, index1, size1, size2), prob) =>
-        out.write(index2 + " " + index1 + " " + size1 + " " + size2 + " " + prob + "\n")
-    }
-
-    out.flush()
-    out.close()
-
-    System.out.println("Done Writing params to file")
-
-  }
 
 }

@@ -1,6 +1,10 @@
-package com.github.nayakhilesh;;
+package com.github.nayakhilesh;
+
+import com.google.common.base.Function;
+import org.javatuples.Triplet;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Properties;
 
 public class MachineTranslator {
@@ -23,49 +27,53 @@ public class MachineTranslator {
     }
 
     public String translate(String sentence) {
-        return decoder.decode(sentence);        
+        return decoder.decode(sentence);
     }
 
-  private Lexicon buildLexicon(Properties properties, String lang1FilePath, String lang2FilePath) {
+    private Lexicon buildLexicon(Properties properties, String lang1FilePath, String lang2FilePath) {
 
-    //p(f|e)
-    //computes prob that word f in lang2 aligns to word e in lang1
-    IbmModel2 ibm2Lang1 = initializeIbmModel2(lang1FilePath, lang2FilePath)
+        //p(f|e)
+        //computes prob that word f in lang2 aligns to word e in lang1
+        final IbmModel2 ibm2Lang1 = initializeIbmModel2(lang1FilePath, lang2FilePath);
 
-    //p(e|f)
-    //computes prob that word e in lang1 aligns to word f in lang2
-    IbmModel2 ibm2Lang2 = initializeIbmModel2(lang2FilePath, lang1FilePath)
+        //p(e|f)
+        //computes prob that word e in lang1 aligns to word f in lang2
+        final IbmModel2 ibm2Lang2 = initializeIbmModel2(lang2FilePath, lang1FilePath);
 
-    Lexicon lexicon = new Lexicon();
-    System.out.println("Building lexicon...");
-    long startLexicon = System.currentTimeMillis();
-    loopThroughFiles(lang1FilePath, lang2FilePath, true) {
-      (line1, line2, index) =>
+        final Lexicon lexicon = new Lexicon();
+        System.out.println("Building lexicon...");
+        long startLexicon = System.currentTimeMillis();
+        Utils.loopThroughFiles(lang1FilePath, lang2FilePath, new Function<Triplet<String, String, Integer>, Void>() {
+            @Override
+            public Void apply(Triplet<String, String, Integer> input) {
 
-      //each position has the index of the lang1 word it aligns to (starting from 0 <=> NULL)
-        val lang2Alignments = ibm2Lang1.extractAlignments(line1, line2)
+                String line1 = input.getValue0();
+                String line2 = input.getValue1();
 
-        //each position has the index of the lang2 word it aligns to (starting from 0 <=> NULL)
-        val lang1Alignments = ibm2Lang2.extractAlignments(line2, line1)
+                //each position has the index of the lang1 word it aligns to (starting from 0 <=> NULL)
+                List<Integer> lang2Alignments = ibm2Lang1.extractAlignments(line1, line2);
 
-        lexicon.add(lang1Alignments, lang2Alignments, line1, line2)
+                //each position has the index of the lang2 word it aligns to (starting from 0 <=> NULL)
+                List<Integer> lang1Alignments = ibm2Lang2.extractAlignments(line2, line1);
+
+                lexicon.add(lang1Alignments, lang2Alignments, line1, line2);
+                return null;
+            }
+        });
+
+        long endLexicon = System.currentTimeMillis();
+
+        System.out.println("Building lexicon time=" + (endLexicon - startLexicon) / 1000.0 + "s");
+
+        return lexicon;
     }
-    long endLexicon = System.currentTimeMillis();
 
-    System.out.println("Building lexicon time=" + (endLexicon - startLexicon) / 1000.0 + "s");
+    public IbmModel2 initializeIbmModel2(String lang1FilePath, String lang2FilePath) {
 
-    lexicon
-  }
-
-  public IbmModel2 initializeIbmModel2(String lang1FilePath, String lang2FilePath) {
-
-      IbmModel1 ibm1 = new IbmModel1(lang1FilePath, lang2FilePath, 5)
-      val mutableIbm1TranslationParams = collection.mutable.Map(ibm1.translationParams.toSeq: _*)
-    val ibm2 =
-      IbmModel2(lang1FilePath, lang2FilePath, 5, mutableIbm1TranslationParams)
-
-    return ibm2
-  }
+        IbmModel1 ibm1 = new IbmModel1(lang1FilePath, lang2FilePath, 5);
+        IbmModel2 ibm2 = new IbmModel2(lang1FilePath, lang2FilePath, 5, ibm1.getTranslationParams());
+        return ibm2;
+    }
 
 }
 

@@ -1,6 +1,7 @@
 package com.github.nayakhilesh;
 
 import com.google.common.base.Function;
+import lombok.Getter;
 import org.javatuples.Pair;
 import org.javatuples.Triplet;
 
@@ -8,6 +9,7 @@ import java.util.*;
 
 public class IbmModel1 {
 
+    @Getter
     private Map<String, Map<String, Double>> translationParams;
 
     public IbmModel1(String lang1FilePath, String lang2FilePath, int numIterations) {
@@ -55,12 +57,12 @@ public class IbmModel1 {
                             if (c2.containsKey(pair)) {
                                 c2.put(pair, c2.get(pair) + delta);
                             } else {
-                                c2.put(pair, 0.0);
+                                c2.put(pair, delta);
                             }
                             if (c1.containsKey(word1)) {
                                 c1.put(word1, c1.get(word1) + delta);
                             } else {
-                                c1.put(word1, 0.0);
+                                c1.put(word1, delta);
                             }
                         }
 
