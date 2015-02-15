@@ -29,63 +29,76 @@ public class Lexicon {
         growAlignments(lang2FinalAlignments, lang1FinalAlignments, lang2Alignments, lang1Alignments);
         growAlignments(lang1FinalAlignments, lang2FinalAlignments, lang1Alignments, lang2Alignments);
 
-        List<String> words1 = line1.split " "
-        List<String> words2 = line2 split " "
+        List<String> words1 = Arrays.asList(line1.split(" "));
+        List<String> words2 = Arrays.asList(line2.split(" "));
 
-        0 until lang2FinalAlignments.size foreach {
-            startLang2 =>
-            0 until(lang2FinalAlignments.size - startLang2) foreach {
-                lengthLang2 =>
-                0 until lang1FinalAlignments.size foreach {
-                    startLang1 =>
-                    0 until(lang1FinalAlignments.size - startLang1) foreach {
-                        lengthLang1 =>
+        for (int startLang2 = 0; startLang2 < lang2FinalAlignments.size(); startLang2++) {
+
+            for (int lengthLang2 = 0; lengthLang2 < lang2FinalAlignments.size() - startLang2; lengthLang2++) {
+
+                for (int startLang1 = 0; startLang1 < lang1FinalAlignments.size(); startLang1++) {
+
+                    for (int lengthLang1 = 0; lengthLang1 < lang1FinalAlignments.size() - startLang1; lengthLang1++) {
 
                         if (isConsistent(startLang2, lengthLang2,
                                 startLang1, lengthLang1, lang2FinalAlignments) &&
                                 isConsistent(startLang1, lengthLang1,
                                         startLang2, lengthLang2, lang1FinalAlignments)) {
-                            val phraseLang2 = words2.slice(startLang2, startLang2 + lengthLang2 + 1)
-                            val phraseLang1 = words1.slice(startLang1, startLang1 + lengthLang1 + 1)
+                            List<String> phraseLang2 = words2.subList(startLang2, startLang2 + lengthLang2 + 1);
+                            List<String> phraseLang1 = words1.subList(startLang1, startLang1 + lengthLang1 + 1);
                             //System.out.println(arrayToString(phraseLang2) + "|" + arrayToString(phraseLang1))
-                            val phraseLang2Seq = phraseLang2.toIndexedSeq
-                            val phraseLang1Seq = phraseLang1.toIndexedSeq
-                            if (translatedPairs.contains(phraseLang1Seq))
-                                translatedPairs(phraseLang1Seq) += phraseLang2Seq
-                            else
-                                translatedPairs += (phraseLang1Seq -> collection.mutable.Set[Seq[String]]
-                            (phraseLang2Seq))
-                            c2(phraseLang2Seq -> phraseLang1Seq) = c2.getOrElse((phraseLang2Seq -> phraseLang1Seq), 0) + 1
-                            c1(phraseLang2Seq) = c1.getOrElse(phraseLang2Seq, 0) + 1
+                            if (translatedPairs.containsKey(phraseLang1)) {
+                                translatedPairs.get(phraseLang1).add(phraseLang2);
+                            } else {
+                                Set<List<String>> set = new HashSet<List<String>>();
+                                set.add(phraseLang2);
+                                translatedPairs.put(phraseLang1, set);
+                            }
+                            Pair<List<String>, List<String>> pair = new Pair<List<String>, List<String>>(phraseLang2, phraseLang1);
+                            // TODO refactor into Maps.incrementKey
+                            if (c2.containsKey(pair)) {
+                                c2.put(pair, c2.get(pair) + 1);
+                            } else {
+                                c2.put(pair, 1);
+                            }
+                            if (c1.containsKey(phraseLang2)) {
+                                c1.put(phraseLang2, c1.get(phraseLang2) + 1);
+                            } else {
+                                c1.put(phraseLang2, 1);
+                            }
                             //g(e,f) = log c(f,e)/c(f)
                             //e to f translation
                         }
 
                     }
+
                 }
+
             }
+
         }
 
     }
 
-    private def isConsistent(startLang2:Int, lengthLang2:Int,
-                             startLang1:Int, lengthLang1:Int,
-                             lang2FinalAlignments:ArrayBuffer[ArrayBuffer[Int]])
+    private boolean isConsistent(int startLang2, int lengthLang2,
+                                 final int startLang1, final int lengthLang1,
+                                 List<List<Integer>> lang2FinalAlignments) {
 
-    :Boolean=
+        for (int i = startLang2; i <= startLang2 + lengthLang2; i++) {
+            List<Integer> valueList = lang2FinalAlignments.get(i);
 
-    {
+            if (valueList.size() == 0) {
+                return false;
+            }
 
-        (startLang2 to(startLang2 + lengthLang2))foreach {
-        i =>
-        val valueSeq = lang2FinalAlignments(i)
-        if (valueSeq.size == 0 || valueSeq.exists {
-            value =>value<startLang1||value > (startLang1 + lengthLang1)
-        })
-        return false
-    }
-        true
+            for (int value : valueList) {
+                if (value < startLang1 || value > (startLang1 + lengthLang1)) {
+                    return false;
+                }
+            }
+        }
 
+        return true;
     }
 
     private void findAlignmentIntersection(List<Integer> lang2Alignments, List<Integer> lang1Alignments,
@@ -107,90 +120,80 @@ public class Lexicon {
 
     //g(e,f) = log c(f,e)/c(f)
     //e to f translation
-    def estimate(wordsLang1:Seq[String], wordsLang2:Seq[String])
-
-    :Double=
-
-    {
-        if (!(c2.contains((wordsLang2 -> wordsLang1)) && c1.contains(wordsLang2)))
-            0.0
-        math.log(c2(wordsLang2 -> wordsLang1).toDouble / c1(wordsLang2))
+    public double estimate(List<String> wordsLang1, List<String> wordsLang2) {
+        Pair<List<String>, List<String>> pair = new Pair<List<String>, List<String>>(wordsLang2, wordsLang1);
+        if (!(c2.containsKey(pair) && c1.containsKey(wordsLang2))) {
+            return 0.0;
+        }
+        return Math.log(((double) c2.get(pair)) / ((double) c1.get(wordsLang2)));
     }
 
-    def getTranslation(wordsLang1:Seq[String])
-
-    :collection.Set[Seq[String]]=
-
-    {
-        translatedPairs.getOrElse(wordsLang1, null)
+    public Set<List<String>> getTranslation(List<String> wordsLang1) {
+        return translatedPairs.get(wordsLang1);
     }
 
     private void growAlignments(List<List<Integer>> lang2FinalAlignments,
-                               List<List<Integer>> lang1FinalAlignments,
-                               List<Integer> lang2Alignments, List<Integer> lang1Alignments) {
+                                List<List<Integer>> lang1FinalAlignments,
+                                List<Integer> lang2Alignments, List<Integer> lang1Alignments) {
 
-        lang2FinalAlignments.iterator.zipWithIndex foreach {
-            case (lang1Seq,index2)=>
-                if (lang1Seq.size == 0) {
+        for (int index2 = 0; index2 < lang2FinalAlignments.size(); index2++) {
+            List<Integer> lang1List = lang2FinalAlignments.get(index2);
 
-                    var count = -1
-                    val alignedToLang1Index = lang2Alignments(index2) - 1
-                    if (alignedToLang1Index >= 0) {
-                        count = countNeighbours(alignedToLang1Index, index2, lang2FinalAlignments, lang1FinalAlignments)
-                    }
+            if (lang1List.size() == 0) {
 
-                    var count1 = -1
-                    var row1 = 0
-                    lang1Alignments.iterator.zipWithIndex foreach {
-                        case (lang2Index,index1)=>
-                            if (lang2Index - 1 == index2) {
-                                val tempCount = countNeighbours(index1, index2, lang2FinalAlignments, lang1FinalAlignments)
-                                if (tempCount > count1) {
-                                    count1 = tempCount
-                                    row1 = index1
-                                }
-                            }
-                    }
-
-                    if (!(count == -1 && count1 == -1)) {
-                        if (count >= count1) {
-                            lang2FinalAlignments(index2) += alignedToLang1Index
-                            lang1FinalAlignments(alignedToLang1Index) += index2
-                        } else {
-                            lang2FinalAlignments(index2) += row1
-                            lang1FinalAlignments(row1) += index2
-                        }
-                    }
-
+                int count = -1;
+                int alignedToLang1Index = lang2Alignments.get(index2) - 1;
+                if (alignedToLang1Index >= 0) {
+                    count = countNeighbours(alignedToLang1Index, index2, lang2FinalAlignments, lang1FinalAlignments);
                 }
 
+                int count1 = -1;
+                int row1 = 0;
+
+                for (int index1 = 0; index1 < lang1Alignments.size(); index1++) {
+                    int lang2Index = lang1Alignments.get(index1);
+                    if (lang2Index - 1 == index2) {
+                        int tempCount = countNeighbours(index1, index2, lang2FinalAlignments, lang1FinalAlignments);
+                        if (tempCount > count1) {
+                            count1 = tempCount;
+                            row1 = index1;
+                        }
+                    }
+                }
+
+                if (!(count == -1 && count1 == -1)) {
+                    if (count >= count1) {
+                        lang2FinalAlignments.get(index2).add(alignedToLang1Index);
+                        lang1FinalAlignments.get(alignedToLang1Index).add(index2);
+                    } else {
+                        lang2FinalAlignments.get(index2).add(row1);
+                        lang1FinalAlignments.get(row1).add(index2);
+                    }
+                }
+
+            }
+
         }
 
     }
 
-    private def countNeighbours(row:Int, col:Int,
-                                lang2FinalAlignments:IndexedSeq[collection.mutable.Seq[Int]], lang1FinalAlignments:IndexedSeq[collection.mutable.Seq[Int]])
+    private int countNeighbours(int row, int col,
+                                List<List<Integer>> lang2FinalAlignments, List<List<Integer>> lang1FinalAlignments) {
 
-    :Int=
+        int count = 0;
 
-    {
-
-        var count = 0
-
-        (row - 1) to(row + 1) foreach {
-        tempRow =>
-        (col - 1) to(col + 1) foreach {
-            tempCol =>
-            if (tempRow >= 0 && tempRow < lang1FinalAlignments.size &&
-                    tempCol >= 0 && tempCol < lang2FinalAlignments.size &&
-                    !(tempRow == row && tempCol == col) &&
-                    lang2FinalAlignments(tempCol).contains(tempRow)) {
-                count += 1
+        for (int tempRow = row - 1; tempRow <= row + 1; tempRow++) {
+            for (int tempCol = col - 1; tempCol <= col + 1; tempCol++) {
+                if (tempRow >= 0 && tempRow < lang1FinalAlignments.size() &&
+                        tempCol >= 0 && tempCol < lang2FinalAlignments.size() &&
+                        !(tempRow == row && tempCol == col) &&
+                        lang2FinalAlignments.get(tempCol).contains(tempRow)) {
+                    count++;
+                }
             }
         }
-    }
 
-        count
+        return count;
     }
 
 }
