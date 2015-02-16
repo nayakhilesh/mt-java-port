@@ -83,12 +83,13 @@ public class Decoder {
                 Beam.State maxState = Collections.max(beam.getStates(), STATE_COMPARATOR);
 
                 Set<Phrase> phrases = new TreeSet<>(PHRASE_COMPARATOR);
-                Beam.State initialState = maxState;
-                while (initialState != null) {
-                    Pair<Beam.State, Phrase> pair = bp.get(initialState);
-                    initialState = pair.getValue0();
+                Beam.State currentState = maxState;
+                Pair<Beam.State, Phrase> pair = bp.get(currentState);
+                while (pair != null) {
+                    currentState = pair.getValue0();
                     Phrase p = pair.getValue1();
                     phrases.add(p);
+                    pair = bp.get(currentState);
                 }
 
                 StringBuilder translatedLine = new StringBuilder();
