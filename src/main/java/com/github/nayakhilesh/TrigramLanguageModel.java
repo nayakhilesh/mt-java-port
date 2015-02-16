@@ -37,12 +37,12 @@ public class TrigramLanguageModel {
     }
 
     private int countLines(String filePath) throws IOException {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(filePath), Charsets.UTF_8));
         int lines = 0;
-        while (reader.readLine() != null) {
-            lines++;
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(filePath), Charsets.UTF_8))) {
+            while (br.readLine() != null) {
+                lines++;
+            }
         }
-        reader.close();
         return lines;
     }
 

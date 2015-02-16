@@ -11,6 +11,25 @@ import java.util.*;
 
 public class Decoder {
 
+    private static final Comparator<Beam.State> STATE_COMPARATOR = new Comparator<Beam.State>() {
+        @Override
+        public int compare(Beam.State o1, Beam.State o2) {
+            if (o1.score > o2.score) {
+                return 1;
+            } else if (o1.score < o2.score) {
+                return -1;
+            }
+            return 0;
+        }
+    };
+
+    private static final Comparator<Phrase> PHRASE_COMPARATOR = new Comparator<Phrase>() {
+        @Override
+        public int compare(Phrase o1, Phrase o2) {
+            return o1.lang1Start - o2.lang1Start;
+        }
+    };
+
     private Lexicon lexicon;
     private TrigramLanguageModel languageModel;
     private int distortionLimit;
@@ -61,19 +80,9 @@ public class Decoder {
             Beam beam = beams.get(i);
             if (beam.getStates().size() > 0) {
 
-                Beam.State maxState = Collections.max(beam.getStates(), new Comparator<Beam.State>() {
-                    @Override
-                    public int compare(Beam.State o1, Beam.State o2) {
-                        if (o1.score > o2.score) {
-                            return 1;
-                        } else if (o1.score < o2.score) {
-                            return -1;
-                        }
-                        return 0;
-                    }
-                });
+                Beam.State maxState = Collections.max(beam.getStates(), STATE_COMPARATOR);
 
-                Set<Phrase> phrases = new TreeSet<>();
+                Set<Phrase> phrases = new TreeSet<>(PHRASE_COMPARATOR);
                 Beam.State initialState = maxState;
                 while (initialState != null) {
                     Pair<Beam.State, Phrase> pair = bp.get(initialState);
@@ -87,17 +96,16 @@ public class Decoder {
                 int index = 0;
                 while (index < words.size()) {
 
-                    final int finalIndex = index;
-                    Optional<Phrase> phraseOptional = Iterators.tryFind(phrases.iterator(), new Predicate<Phrase>() {
-                        @Override
-                        public boolean apply(Phrase p) {
-                            return p.lang1Start <= finalIndex + 1 &&
-                                    finalIndex + 1 <= p.lang1End;
+                    Phrase phrase = null;
+                    for (Phrase p : phrases) {
+                        if (p.lang1Start <= index + 1 &&
+                                index + 1 <= p.lang1End) {
+                            phrase = p;
+                            break;
                         }
-                    });
+                    }
 
-                    if (phraseOptional.isPresent()) {
-                        Phrase phrase = phraseOptional.get();
+                    if (phrase != null) {
                         translatedLine.append(Joiner.on(" ").join(phrase.lang2Words)).append(" ");
                         phrases.remove(phrase);
                         index = phrase.lang1End;
@@ -236,16 +244,12 @@ public class Decoder {
     //start and end are 1 indexed
     //i.e. start..end (inclusive) in lang1 is translated as lang2Words
     @Value
-    private static class Phrase implements Comparable<Phrase> {
+    private static class Phrase {
 
         private int lang1Start;
         private int lang1End;
         private List<String> lang2Words;
 
-        @Override
-        public int compareTo(Phrase o) {
-            return this.lang1Start - o.lang1Start;
-        }
     }
 
 }
