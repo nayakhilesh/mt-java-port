@@ -9,7 +9,7 @@ import java.util.Properties;
 
 public class Main {
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws IOException {
 
         //usage: corpus.en, corpus.es
 
@@ -23,13 +23,10 @@ public class Main {
         long end = System.currentTimeMillis();
         System.out.println("Total time=" + (end - start) / 1000.0 + "s");
 
-        BufferedReader br = new BufferedReader(new InputStreamReader(System.in, Charsets.UTF_8));
-        while (true) {
-            try {
-                System.out.println(translator.translate(br.readLine()));
-            } catch (IOException ioe) {
-                System.out.println("IO error trying to read your name!");
-                System.exit(1);
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(System.in, Charsets.UTF_8))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                System.out.println(translator.translate(line));
             }
         }
 
