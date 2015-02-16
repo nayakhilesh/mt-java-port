@@ -109,7 +109,7 @@ public class DefaultTranslationParams {
             if (cache.containsKey(word1)) {
                 return cache.get(word1);
             } else {
-                double value = (1.0 / n.get(word1).size());
+                double value = 1.0 / n.get(word1).size();
                 cache.put(word1, value);
                 return value;
             }

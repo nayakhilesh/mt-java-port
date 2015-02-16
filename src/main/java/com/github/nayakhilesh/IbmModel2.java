@@ -65,8 +65,8 @@ public class IbmModel2 {
                         double denom = 0.0;
                         for (int index1 = 0; index1 < nullPrefixedWords1.size(); index1++) {
                             String word1 = nullPrefixedWords1.get(index1);
-                            denom += (alignmentParams.get(new Quartet<>(index1, index2 + 1, size1, size2)) *
-                                    translationParams.get(word1).get(word2));
+                            denom += alignmentParams.get(new Quartet<>(index1, index2 + 1, size1, size2)) *
+                                    translationParams.get(word1).get(word2);
                         }
                         for (int index1 = 0; index1 < nullPrefixedWords1.size(); index1++) {
                             String word1 = nullPrefixedWords1.get(index1);

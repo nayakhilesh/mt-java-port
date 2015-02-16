@@ -91,7 +91,8 @@ public class Decoder {
                     Optional<Phrase> phraseOptional = Iterators.tryFind(phrases.iterator(), new Predicate<Phrase>() {
                         @Override
                         public boolean apply(Phrase p) {
-                            return (p.lang1Start <= finalIndex + 1) && (finalIndex + 1 <= p.lang1End);
+                            return p.lang1Start <= finalIndex + 1 &&
+                                    finalIndex + 1 <= p.lang1End;
                         }
                     });
 
@@ -124,8 +125,8 @@ public class Decoder {
 
         Set<Phrase> phrases = new HashSet<>();
         //(r + 1) - d <= s <= (r + 1) + d
-        for (int start = Math.max((q.prevEnd + 1 - distortionLimit), 0);
-             start <= Math.min((q.prevEnd + 1 + distortionLimit), wordsLang1.size() - 1); start++) {
+        for (int start = Math.max(q.prevEnd + 1 - distortionLimit, 0);
+             start <= Math.min(q.prevEnd + 1 + distortionLimit, wordsLang1.size() - 1); start++) {
             int end = start;
             boolean overlap = false;
             while (end < wordsLang1.size() && !overlap) {

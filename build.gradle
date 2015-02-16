@@ -34,3 +34,11 @@ tasks.withType(Pmd) {
         html.enabled = true
     }
 }
+
+pmd {
+    ignoreFailures = true
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.2.1'
+}

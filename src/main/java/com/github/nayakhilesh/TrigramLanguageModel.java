@@ -173,9 +173,9 @@ public class TrigramLanguageModel {
                     double part3 = lambda3 * qML(word3);
                     double denominator = part1 + part2 + part3;
                     if (denominator != 0) {
-                        count1 += ((numOccurrences * part1) / denominator);
-                        count2 += ((numOccurrences * part2) / denominator);
-                        count3 += ((numOccurrences * part3) / denominator);
+                        count1 += (numOccurrences * part1) / denominator;
+                        count2 += (numOccurrences * part2) / denominator;
+                        count3 += (numOccurrences * part3) / denominator;
                     }
                 }
 
