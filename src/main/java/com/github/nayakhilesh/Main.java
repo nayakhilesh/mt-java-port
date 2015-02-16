@@ -16,7 +16,7 @@ public class Main {
         long start = System.currentTimeMillis();
 
         final Properties properties = new Properties();
-        properties.load(Main.class.getResourceAsStream("mt.properties"));
+        properties.load(Main.class.getClassLoader().getResourceAsStream("mt.properties"));
 
         MachineTranslator translator = new MachineTranslator(properties, args[0], args[1]);
 

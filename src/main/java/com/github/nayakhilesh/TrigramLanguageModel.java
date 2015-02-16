@@ -61,10 +61,8 @@ public class TrigramLanguageModel {
                     System.out.println("line#:" + lineNumber);
                 }
 
-                List<String> words = Arrays.asList(line.split(" "));
-                totalNumWords += words.size();
-                words.add(0, BEFORE_SYMBOL);
-                words.add(0, BEFORE_SYMBOL);
+                List<String> words = Utils.splitAndPrefix(line, BEFORE_SYMBOL, BEFORE_SYMBOL);
+                totalNumWords += words.size() - 2;
                 words.add(AFTER_SYMBOL);
 
                 // sliding window
@@ -106,10 +104,8 @@ public class TrigramLanguageModel {
                     System.out.println("line#:" + lineNumber);
                 }
 
-                List<String> words = Arrays.asList(line.split(" "));
-                totalNumWords += words.size();
-                words.add(0, BEFORE_SYMBOL);
-                words.add(0, BEFORE_SYMBOL);
+                List<String> words = Utils.splitAndPrefix(line, BEFORE_SYMBOL, BEFORE_SYMBOL);
+                totalNumWords += words.size() - 2;
                 words.add(AFTER_SYMBOL);
 
                 // sliding window
@@ -219,9 +215,9 @@ public class TrigramLanguageModel {
     public double estimate(List<String> words) {
 
         List<String> newWords = new ArrayList<>();
+        newWords.add(BEFORE_SYMBOL);
+        newWords.add(BEFORE_SYMBOL);
         newWords.addAll(words);
-        newWords.add(0, BEFORE_SYMBOL);
-        newWords.add(0, BEFORE_SYMBOL);
         newWords.add(AFTER_SYMBOL);
 
         double sum = 0.0;

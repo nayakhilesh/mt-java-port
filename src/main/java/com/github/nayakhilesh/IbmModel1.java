@@ -44,8 +44,7 @@ public class IbmModel1 {
 
                     for (String word2 : line2.split(" ")) {
 
-                        List<String> words1 = Arrays.asList(line1.split(" "));
-                        words1.add(0, Utils.NULL);
+                        List<String> words1 = Utils.splitAndPrefix(line1, Utils.NULL);
 
                         double denom = 0.0;
                         for (String word1 : words1) {
@@ -96,8 +95,7 @@ public class IbmModel1 {
 
     public List<Integer> extractAlignments(String line1, String line2) {
 
-        List<String> words1 = Arrays.asList(line1.split(" "));
-        words1.add(0, Utils.NULL);
+        List<String> words1 = Utils.splitAndPrefix(line1, Utils.NULL);
         List<Integer> list = new ArrayList<>();
         for (String word2 : line2.split(" ")) {
 

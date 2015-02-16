@@ -31,8 +31,7 @@ public class DefaultTranslationParams {
                         String line1 = Triplet.getValue0();
                         String line2 = Triplet.getValue1();
 
-                        List<String> words1 = Arrays.asList(line1.split(" "));
-                        words1.add(0, NULL);
+                        List<String> words1 = Utils.splitAndPrefix(line1, NULL);
 
                         for (String word1 : words1) {
                             if (n.containsKey(word1)) {
@@ -68,8 +67,7 @@ public class DefaultTranslationParams {
                         String line1 = Triplet.getValue0();
                         String line2 = Triplet.getValue1();
 
-                        List<String> words1 = Arrays.asList(line1.split(" "));
-                        words1.add(0, NULL);
+                        List<String> words1 = Utils.splitAndPrefix(line1, NULL);
 
                         for (String word1 : words1) {
                             for (String word2 : line2.split(" ")) {

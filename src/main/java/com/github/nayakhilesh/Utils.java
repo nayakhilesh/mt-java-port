@@ -5,6 +5,9 @@ import com.google.common.base.Function;
 import org.javatuples.Triplet;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class Utils {
 
@@ -30,6 +33,13 @@ public class Utils {
             throw new RuntimeException(ioe);
         }
 
+    }
+
+    public static List<String> splitAndPrefix(String line, String... prefixes) {
+        List<String> words = new ArrayList<>();
+        words.addAll(Arrays.asList(prefixes));
+        words.addAll(Arrays.asList(line.split(" ")));
+        return words;
     }
 
 }
