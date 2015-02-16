@@ -1,5 +1,7 @@
 package com.github.nayakhilesh;
 
+import com.google.common.base.Charsets;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -21,7 +23,7 @@ public class Main {
         long end = System.currentTimeMillis();
         System.out.println("Total time=" + (end - start) / 1000.0 + "s");
 
-        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in, Charsets.UTF_8));
         while (true) {
             try {
                 System.out.println(translator.translate(br.readLine()));

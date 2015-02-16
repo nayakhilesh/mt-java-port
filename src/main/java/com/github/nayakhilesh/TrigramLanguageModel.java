@@ -1,11 +1,10 @@
 package com.github.nayakhilesh;
 
+import com.google.common.base.Charsets;
 import org.javatuples.Pair;
 import org.javatuples.Triplet;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 
 public class TrigramLanguageModel {
@@ -28,17 +27,17 @@ public class TrigramLanguageModel {
 
     // uses Linear Interpolation with history partitions
     public TrigramLanguageModel() {
-        c1 = new HashMap<String, Integer>();
-        c2 = new HashMap<Pair<String, String>, Integer>();
-        c3 = new HashMap<Triplet<String, String, String>, Integer>();
+        c1 = new HashMap<>();
+        c2 = new HashMap<>();
+        c3 = new HashMap<>();
         totalNumWords = 0;
-        lambda1 = new ArrayList<Double>(NUM_PARTITIONS);
-        lambda2 = new ArrayList<Double>(NUM_PARTITIONS);
-        lambda3 = new ArrayList<Double>(NUM_PARTITIONS);
+        lambda1 = new ArrayList<>(NUM_PARTITIONS);
+        lambda2 = new ArrayList<>(NUM_PARTITIONS);
+        lambda3 = new ArrayList<>(NUM_PARTITIONS);
     }
 
     private int countLines(String filePath) throws IOException {
-        BufferedReader reader = new BufferedReader(new FileReader(filePath));
+        BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(filePath), Charsets.UTF_8));
         int lines = 0;
         while (reader.readLine() != null) {
             lines++;
@@ -52,88 +51,89 @@ public class TrigramLanguageModel {
         int numLines = countLines(filePath);
         int partitionPoint = (int) (numLines * (1.0 - VALIDATION_DATA_FRACTION));
 
-        BufferedReader br = new BufferedReader(new FileReader(filePath));
-        String line;
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(filePath), Charsets.UTF_8))) {
+            String line;
 
-        // training data
-        int lineNumber = 1;
-        while ((line = br.readLine()) != null && lineNumber <= partitionPoint) {
-            if (lineNumber % 200 == 0) {
-                System.out.println("line#:" + lineNumber);
-            }
-
-            List<String> words = Arrays.asList(line.split(" "));
-            totalNumWords += words.size();
-            words.add(0, BEFORE_SYMBOL);
-            words.add(0, BEFORE_SYMBOL);
-            words.add(AFTER_SYMBOL);
-
-            // sliding window
-            for (int i = 0, j = 1, k = 2; k < words.size(); i++, j++, k++) {
-                String word1 = words.get(i);
-                String word2 = words.get(j);
-                String word3 = words.get(k);
-
-                Triplet<String, String, String> Triplet = new Triplet<String, String, String>(word1, word2, word3);
-                if (c3.containsKey(Triplet)) {
-                    c3.put(Triplet, c3.get(Triplet) + 1);
-                } else {
-                    c3.put(Triplet, 1);
+            // training data
+            int lineNumber = 1;
+            while ((line = br.readLine()) != null && lineNumber <= partitionPoint) {
+                if (lineNumber % 200 == 0) {
+                    System.out.println("line#:" + lineNumber);
                 }
 
-                Pair<String, String> pair = new Pair<String, String>(word2, word3);
-                if (c2.containsKey(pair)) {
-                    c2.put(pair, c2.get(pair) + 1);
-                } else {
-                    c2.put(pair, 1);
+                List<String> words = Arrays.asList(line.split(" "));
+                totalNumWords += words.size();
+                words.add(0, BEFORE_SYMBOL);
+                words.add(0, BEFORE_SYMBOL);
+                words.add(AFTER_SYMBOL);
+
+                // sliding window
+                for (int i = 0, j = 1, k = 2; k < words.size(); i++, j++, k++) {
+                    String word1 = words.get(i);
+                    String word2 = words.get(j);
+                    String word3 = words.get(k);
+
+                    Triplet<String, String, String> Triplet = new Triplet<>(word1, word2, word3);
+                    if (c3.containsKey(Triplet)) {
+                        c3.put(Triplet, c3.get(Triplet) + 1);
+                    } else {
+                        c3.put(Triplet, 1);
+                    }
+
+                    Pair<String, String> pair = new Pair<>(word2, word3);
+                    if (c2.containsKey(pair)) {
+                        c2.put(pair, c2.get(pair) + 1);
+                    } else {
+                        c2.put(pair, 1);
+                    }
+
+                    if (c1.containsKey(word3)) {
+                        c1.put(word3, c1.get(word3) + 1);
+                    } else {
+                        c1.put(word3, 1);
+                    }
                 }
 
-                if (c1.containsKey(word3)) {
-                    c1.put(word3, c1.get(word3) + 1);
-                } else {
-                    c1.put(word3, 1);
+                lineNumber++;
+            }
+
+            Map<Triplet<String, String, String>, Integer> cPrime = new HashMap<>();
+
+            // validation data
+            lineNumber = 1;
+            while ((line = br.readLine()) != null) {
+                if (lineNumber % 200 == 0) {
+                    System.out.println("line#:" + lineNumber);
                 }
-            }
 
-            lineNumber++;
-        }
+                List<String> words = Arrays.asList(line.split(" "));
+                totalNumWords += words.size();
+                words.add(0, BEFORE_SYMBOL);
+                words.add(0, BEFORE_SYMBOL);
+                words.add(AFTER_SYMBOL);
 
-        Map<Triplet<String, String, String>, Integer> cPrime = new HashMap<Triplet<String, String, String>, Integer>();
+                // sliding window
+                for (int i = 0, j = 1, k = 2; k < words.size(); i++, j++, k++) {
+                    String word1 = words.get(i);
+                    String word2 = words.get(j);
+                    String word3 = words.get(k);
 
-        // validation data
-        lineNumber = 1;
-        while ((line = br.readLine()) != null) {
-            if (lineNumber % 200 == 0) {
-                System.out.println("line#:" + lineNumber);
-            }
-
-            List<String> words = Arrays.asList(line.split(" "));
-            totalNumWords += words.size();
-            words.add(0, BEFORE_SYMBOL);
-            words.add(0, BEFORE_SYMBOL);
-            words.add(AFTER_SYMBOL);
-
-            // sliding window
-            for (int i = 0, j = 1, k = 2; k < words.size(); i++, j++, k++) {
-                String word1 = words.get(i);
-                String word2 = words.get(j);
-                String word3 = words.get(k);
-
-                Triplet<String, String, String> Triplet = new Triplet<String, String, String>(word1, word2, word3);
-                if (cPrime.containsKey(Triplet)) {
-                    cPrime.put(Triplet, cPrime.get(Triplet) + 1);
-                } else {
-                    cPrime.put(Triplet, 1);
+                    Triplet<String, String, String> Triplet = new Triplet<>(word1, word2, word3);
+                    if (cPrime.containsKey(Triplet)) {
+                        cPrime.put(Triplet, cPrime.get(Triplet) + 1);
+                    } else {
+                        cPrime.put(Triplet, 1);
+                    }
                 }
+
             }
 
-        }
-
-        for (int i = 0; i < NUM_PARTITIONS; i++) {
-            Triplet<Double, Double, Double> lambdasBucketI = emAlgorithm(cPrime, i);
-            lambda1.add(lambdasBucketI.getValue0());
-            lambda2.add(lambdasBucketI.getValue1());
-            lambda3.add(lambdasBucketI.getValue2());
+            for (int i = 0; i < NUM_PARTITIONS; i++) {
+                Triplet<Double, Double, Double> lambdasBucketI = emAlgorithm(cPrime, i);
+                lambda1.add(lambdasBucketI.getValue0());
+                lambda2.add(lambdasBucketI.getValue1());
+                lambda3.add(lambdasBucketI.getValue2());
+            }
         }
 
     }
@@ -194,11 +194,11 @@ public class TrigramLanguageModel {
 
         System.out.println("TrigramLanguageModel EM time=" + (endEm - startEm) / 1000.0 + "s");
 
-        return new Triplet<Double, Double, Double>(lambda1, lambda2, lambda3);
+        return new Triplet<>(lambda1, lambda2, lambda3);
     }
 
     private int phi(String word1, String word2) {
-        Pair<String, String> pair = new Pair<String, String>(word1, word2);
+        Pair<String, String> pair = new Pair<>(word1, word2);
         if (c2.containsKey(pair)) {
             switch (c2.get(pair)) {
                 case 1:
@@ -218,7 +218,7 @@ public class TrigramLanguageModel {
 
     public double estimate(List<String> words) {
 
-        List<String> newWords = new ArrayList<String>();
+        List<String> newWords = new ArrayList<>();
         newWords.addAll(words);
         newWords.add(0, BEFORE_SYMBOL);
         newWords.add(0, BEFORE_SYMBOL);
@@ -247,11 +247,11 @@ public class TrigramLanguageModel {
     }
 
     private double qML(String word1, String word2, String word3) {
-        Pair<String, String> pair = new Pair<String, String>(word1, word2);
+        Pair<String, String> pair = new Pair<>(word1, word2);
         if (!c2.containsKey(pair)) {
             return 0.0;
         } else {
-            Triplet<String, String, String> Triplet = new Triplet<String, String, String>(word1, word2, word3);
+            Triplet<String, String, String> Triplet = new Triplet<>(word1, word2, word3);
             if (c3.containsKey(Triplet)) {
                 return ((double) c3.get(Triplet)) / ((double) c2.get(pair));
             } else {
@@ -264,7 +264,7 @@ public class TrigramLanguageModel {
         if (!c1.containsKey(word1)) {
             return 0.0;
         } else {
-            Pair<String, String> pair = new Pair<String, String>(word1, word2);
+            Pair<String, String> pair = new Pair<>(word1, word2);
             if (c2.containsKey(pair)) {
                 return ((double) c2.get(pair)) / ((double) c1.get(word1));
             } else {

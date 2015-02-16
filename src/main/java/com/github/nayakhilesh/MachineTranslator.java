@@ -15,13 +15,13 @@ public class MachineTranslator {
                              String lang1FilePath,
                              String lang2FilePath) throws IOException {
 
-        Lexicon lexicon = buildLexicon(properties, lang1FilePath, lang2FilePath);
+        Lexicon lexicon = buildLexicon(lang1FilePath, lang2FilePath);
         TrigramLanguageModel lang2Model = new TrigramLanguageModel();
         lang2Model.initialize(lang2FilePath);
 
-        int distortionLimit = Integer.valueOf(properties.getProperty("decoder.distortion-limit"));
-        double distortionPenalty = Double.valueOf(properties.getProperty("decoder.distortion-penalty"));
-        double beamWidth = Double.valueOf(properties.getProperty("decoder.beam-width"));
+        int distortionLimit = Integer.parseInt(properties.getProperty("decoder.distortion-limit"));
+        double distortionPenalty = Double.parseDouble(properties.getProperty("decoder.distortion-penalty"));
+        double beamWidth = Double.parseDouble(properties.getProperty("decoder.beam-width"));
 
         this.decoder = new Decoder(lexicon, lang2Model, distortionLimit, distortionPenalty, beamWidth);
     }
@@ -30,7 +30,7 @@ public class MachineTranslator {
         return decoder.decode(sentence);
     }
 
-    private Lexicon buildLexicon(Properties properties, String lang1FilePath, String lang2FilePath) {
+    private Lexicon buildLexicon(String lang1FilePath, String lang2FilePath) {
 
         //p(f|e)
         //computes prob that word f in lang2 aligns to word e in lang1
@@ -71,8 +71,7 @@ public class MachineTranslator {
     public IbmModel2 initializeIbmModel2(String lang1FilePath, String lang2FilePath) {
 
         IbmModel1 ibm1 = new IbmModel1(lang1FilePath, lang2FilePath, 5);
-        IbmModel2 ibm2 = new IbmModel2(lang1FilePath, lang2FilePath, 5, ibm1.getTranslationParams());
-        return ibm2;
+        return new IbmModel2(lang1FilePath, lang2FilePath, 5, ibm1.getTranslationParams());
     }
 
 }

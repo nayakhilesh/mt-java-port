@@ -15,8 +15,8 @@ public class DefaultAlignmentParams {
     public static Map<Quartet<Integer, Integer, Integer, Integer>, Double> getDefaultAlignmentParams(String lang1FilePath,
                                                                                                      String lang2FilePath) {
 
-        Map<Quartet<Integer, Integer, Integer, Integer>, Double> alignmentParams = new HashMap<Quartet<Integer, Integer, Integer, Integer>, Double>();
-        final Set<Pair<Integer, Integer>> sentenceLengthPairs = new HashSet<Pair<Integer, Integer>>();
+        Map<Quartet<Integer, Integer, Integer, Integer>, Double> alignmentParams = new HashMap<>();
+        final Set<Pair<Integer, Integer>> sentenceLengthPairs = new HashSet<>();
 
         System.out.println("Initializing alignmentParams:");
 
@@ -25,7 +25,7 @@ public class DefaultAlignmentParams {
             public Void apply(Triplet<String, String, Integer> triplet) {
                 String line1 = triplet.getValue0();
                 String line2 = triplet.getValue1();
-                sentenceLengthPairs.add(new Pair<Integer, Integer>(line1.split(" ").length, line2.split(" ").length));
+                sentenceLengthPairs.add(new Pair<>(line1.split(" ").length, line2.split(" ").length));
                 return null;
             }
         });
@@ -39,7 +39,7 @@ public class DefaultAlignmentParams {
             index++;
             for (int j = 0; j <= l; j++) {
                 for (int i = 1; i <= m; i++) {
-                    alignmentParams.put(new Quartet<Integer, Integer, Integer, Integer>(j, i, l, m), 1.0 / (l + 1));
+                    alignmentParams.put(new Quartet<>(j, i, l, m), 1.0 / (l + 1));
                 }
             }
         }

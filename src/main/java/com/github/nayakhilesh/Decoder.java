@@ -34,7 +34,7 @@ public class Decoder {
 
         List<String> words = Arrays.asList(line.split(" "));
         int n = words.size();
-        List<Beam> beams = new ArrayList<Beam>();
+        List<Beam> beams = new ArrayList<>();
         for (int i = 0; i < n + 1; i++) {
             beams.add(new Beam(beamWidth));
         }
@@ -44,7 +44,7 @@ public class Decoder {
         beams.get(0).addState(q0);
 
         // back-pointers
-        Map<Beam.State, Pair<Beam.State, Phrase>> bp = new HashMap<Beam.State, Pair<Beam.State, Phrase>>();
+        Map<Beam.State, Pair<Beam.State, Phrase>> bp = new HashMap<>();
 
         for (int i = 0; i < n; i++) {
             for (Beam.State q : beams.get(i).getStates()) {
@@ -73,7 +73,7 @@ public class Decoder {
                     }
                 });
 
-                Set<Phrase> phrases = new TreeSet<Phrase>();
+                Set<Phrase> phrases = new TreeSet<>();
                 Beam.State initialState = maxState;
                 while (initialState != null) {
                     Pair<Beam.State, Phrase> pair = bp.get(initialState);
@@ -122,7 +122,7 @@ public class Decoder {
 
     private Set<Phrase> ph(Beam.State q, List<String> wordsLang1) {
 
-        Set<Phrase> phrases = new HashSet<Phrase>();
+        Set<Phrase> phrases = new HashSet<>();
         //(r + 1) - d <= s <= (r + 1) + d
         for (int start = Math.max((q.prevEnd + 1 - distortionLimit), 0);
              start <= Math.min((q.prevEnd + 1 + distortionLimit), wordsLang1.size() - 1); start++) {
@@ -153,11 +153,11 @@ public class Decoder {
         Beam.State existing = beam.getState(q1);
         if (existing == null) {
             beam.addState(q1);
-            bp.put(q1, new Pair<Beam.State, Phrase>(q, p));
+            bp.put(q1, new Pair<>(q, p));
         } else if (q1.score > existing.score) {
             beam.removeState(existing);
             beam.addState(q1);
-            bp.put(q1, new Pair<Beam.State, Phrase>(q, p));
+            bp.put(q1, new Pair<>(q, p));
         }
         if (q1.score > beam.max) {
             beam.max = q1.score;
@@ -202,7 +202,7 @@ public class Decoder {
         public Beam(double width) {
             this.width = width;
             this.max = -1.0;
-            this.map = new HashMap<State, State>();
+            this.map = new HashMap<>();
         }
 
         public void addState(State state) {
@@ -235,7 +235,7 @@ public class Decoder {
     //start and end are 1 indexed
     //i.e. start..end (inclusive) in lang1 is translated as lang2Words
     @Value
-    private class Phrase implements Comparable<Phrase> {
+    private static class Phrase implements Comparable<Phrase> {
 
         private int lang1Start;
         private int lang1End;

@@ -11,15 +11,15 @@ public class Lexicon {
     private Map<List<String>, Integer> c1;
 
     public Lexicon() {
-        this.translatedPairs = new HashMap<List<String>, Set<List<String>>>();
-        this.c2 = new HashMap<Pair<List<String>, List<String>>, Integer>();
-        this.c1 = new HashMap<List<String>, Integer>();
+        this.translatedPairs = new HashMap<>();
+        this.c2 = new HashMap<>();
+        this.c1 = new HashMap<>();
     }
 
     public void add(List<Integer> lang1Alignments, List<Integer> lang2Alignments, String line1, String line2) {
 
-        List<List<Integer>> lang2FinalAlignments = new ArrayList<List<Integer>>(lang2Alignments.size());
-        List<List<Integer>> lang1FinalAlignments = new ArrayList<List<Integer>>(lang1Alignments.size());
+        List<List<Integer>> lang2FinalAlignments = new ArrayList<>(lang2Alignments.size());
+        List<List<Integer>> lang1FinalAlignments = new ArrayList<>(lang1Alignments.size());
 
         //find elements in intersection of alignments
         findAlignmentIntersection(lang2Alignments, lang1Alignments, lang2FinalAlignments);
@@ -50,11 +50,11 @@ public class Lexicon {
                             if (translatedPairs.containsKey(phraseLang1)) {
                                 translatedPairs.get(phraseLang1).add(phraseLang2);
                             } else {
-                                Set<List<String>> set = new HashSet<List<String>>();
+                                Set<List<String>> set = new HashSet<>();
                                 set.add(phraseLang2);
                                 translatedPairs.put(phraseLang1, set);
                             }
-                            Pair<List<String>, List<String>> pair = new Pair<List<String>, List<String>>(phraseLang2, phraseLang1);
+                            Pair<List<String>, List<String>> pair = new Pair<>(phraseLang2, phraseLang1);
                             // TODO refactor into Maps.incrementKey
                             if (c2.containsKey(pair)) {
                                 c2.put(pair, c2.get(pair) + 1);
@@ -108,7 +108,7 @@ public class Lexicon {
             int lang1Index = lang2Alignments.get(lang2Index);
 
             if (lang1Index > 0 && lang1Alignments.get(lang1Index - 1) == lang2Index + 1) {
-                ArrayList<Integer> arrayList = new ArrayList<Integer>();
+                ArrayList<Integer> arrayList = new ArrayList<>();
                 arrayList.add(lang1Index - 1);
                 lang2FinalAlignments.add(arrayList);
             } else {
@@ -121,7 +121,7 @@ public class Lexicon {
     //g(e,f) = log c(f,e)/c(f)
     //e to f translation
     public double estimate(List<String> wordsLang1, List<String> wordsLang2) {
-        Pair<List<String>, List<String>> pair = new Pair<List<String>, List<String>>(wordsLang2, wordsLang1);
+        Pair<List<String>, List<String>> pair = new Pair<>(wordsLang2, wordsLang1);
         if (!(c2.containsKey(pair) && c1.containsKey(wordsLang2))) {
             return 0.0;
         }

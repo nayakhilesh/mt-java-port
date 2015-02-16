@@ -1,11 +1,10 @@
 package com.github.nayakhilesh;
 
+import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import org.javatuples.Triplet;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 
 public class Utils {
 
@@ -13,9 +12,8 @@ public class Utils {
 
     public static void loopThroughFiles(String file1Path, String file2Path, Function<Triplet<String, String, Integer>, Void> funcToPerform) {
 
-        try {
-            BufferedReader br1 = new BufferedReader(new FileReader(file1Path));
-            BufferedReader br2 = new BufferedReader(new FileReader(file2Path));
+        try (BufferedReader br1 = new BufferedReader(new InputStreamReader(new FileInputStream(file1Path), Charsets.UTF_8));
+             BufferedReader br2 = new BufferedReader(new InputStreamReader(new FileInputStream(file2Path), Charsets.UTF_8))) {
 
             String line1, line2;
             int lineNumber = 1;
@@ -24,7 +22,7 @@ public class Utils {
                     System.out.println("line#:" + lineNumber);
                 }
                 if (!line1.trim().isEmpty() && !line2.trim().isEmpty()) {
-                    funcToPerform.apply(new Triplet<String, String, Integer>(line1, line2, lineNumber));
+                    funcToPerform.apply(new Triplet<>(line1, line2, lineNumber));
                 }
                 lineNumber++;
             }

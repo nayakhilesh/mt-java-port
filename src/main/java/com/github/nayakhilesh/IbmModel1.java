@@ -18,12 +18,12 @@ public class IbmModel1 {
 
         long startEm = System.currentTimeMillis();
 
-        List<Pair<String, String>> temp = new ArrayList<Pair<String, String>>();
+        List<Pair<String, String>> temp = new ArrayList<>();
         for (Map.Entry<String, Map<String, Double>> entry : translationParams.entrySet()) {
             String word1 = entry.getKey();
             Map<String, Double> map = entry.getValue();
             for (String word2 : map.keySet()) {
-                temp.add(new Pair<String, String>(word1, word2));
+                temp.add(new Pair<>(word1, word2));
             }
         }
 
@@ -33,8 +33,8 @@ public class IbmModel1 {
 
             System.out.println("Starting iteration #" + iter);
 
-            final Map<String, Double> c1 = new HashMap<String, Double>();
-            final Map<Pair<String, String>, Double> c2 = new HashMap<Pair<String, String>, Double>();
+            final Map<String, Double> c1 = new HashMap<>();
+            final Map<Pair<String, String>, Double> c2 = new HashMap<>();
 
             Utils.loopThroughFiles(lang1FilePath, lang2FilePath, new Function<Triplet<String, String, Integer>, Void>() {
                 @Override
@@ -53,7 +53,7 @@ public class IbmModel1 {
                         }
                         for (String word1 : words1) {
                             double delta = translationParams.get(word1).get(word2) / denom;
-                            Pair<String, String> pair = new Pair<String, String>(word1, word2);
+                            Pair<String, String> pair = new Pair<>(word1, word2);
                             if (c2.containsKey(pair)) {
                                 c2.put(pair, c2.get(pair) + delta);
                             } else {
@@ -98,7 +98,7 @@ public class IbmModel1 {
 
         List<String> words1 = Arrays.asList(line1.split(" "));
         words1.add(0, Utils.NULL);
-        List<Integer> list = new ArrayList<Integer>();
+        List<Integer> list = new ArrayList<>();
         for (String word2 : line2.split(" ")) {
 
             int maxIndex = 0;

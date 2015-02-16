@@ -20,12 +20,12 @@ public class IbmModel2 {
         this.alignmentParams = DefaultAlignmentParams.getDefaultAlignmentParams(lang1FilePath, lang2FilePath);
 
         long startEm = System.currentTimeMillis();
-        List<Pair<String, String>> temp = new ArrayList<Pair<String, String>>();
+        List<Pair<String, String>> temp = new ArrayList<>();
         for (Map.Entry<String, Map<String, Double>> entry : translationParams.entrySet()) {
             String word1 = entry.getKey();
             Map<String, Double> map = entry.getValue();
             for (String word2 : map.keySet()) {
-                temp.add(new Pair<String, String>(word1, word2));
+                temp.add(new Pair<>(word1, word2));
             }
         }
 
@@ -38,10 +38,10 @@ public class IbmModel2 {
 
             System.out.println("Starting iteration #" + iter);
 
-            final Map<String, Double> c1 = new HashMap<String, Double>();
-            final Map<Pair<String, String>, Double> c2 = new HashMap<Pair<String, String>, Double>();
-            final Map<Triplet<Integer, Integer, Integer>, Double> c3 = new HashMap<Triplet<Integer, Integer, Integer>, Double>();
-            final Map<Quartet<Integer, Integer, Integer, Integer>, Double> c4 = new HashMap<Quartet<Integer, Integer, Integer, Integer>, Double>();
+            final Map<String, Double> c1 = new HashMap<>();
+            final Map<Pair<String, String>, Double> c2 = new HashMap<>();
+            final Map<Triplet<Integer, Integer, Integer>, Double> c3 = new HashMap<>();
+            final Map<Quartet<Integer, Integer, Integer, Integer>, Double> c4 = new HashMap<>();
 
             Utils.loopThroughFiles(lang1FilePath, lang2FilePath, new Function<Triplet<String, String, Integer>, Void>() {
                 @Override
@@ -52,7 +52,7 @@ public class IbmModel2 {
 
                     List<String> words1 = Arrays.asList(line1.split(" "));
                     int size1 = words1.size();
-                    List<String> nullPrefixedWords1 = new ArrayList<String>();
+                    List<String> nullPrefixedWords1 = new ArrayList<>();
                     nullPrefixedWords1.add(Utils.NULL);
                     nullPrefixedWords1.addAll(words1);
 
@@ -65,15 +65,15 @@ public class IbmModel2 {
                         double denom = 0.0;
                         for (int index1 = 0; index1 < nullPrefixedWords1.size(); index1++) {
                             String word1 = nullPrefixedWords1.get(index1);
-                            denom += (alignmentParams.get(new Quartet<Integer, Integer, Integer, Integer>(index1, index2 + 1, size1, size2)) *
+                            denom += (alignmentParams.get(new Quartet<>(index1, index2 + 1, size1, size2)) *
                                     translationParams.get(word1).get(word2));
                         }
                         for (int index1 = 0; index1 < nullPrefixedWords1.size(); index1++) {
                             String word1 = nullPrefixedWords1.get(index1);
-                            Quartet<Integer, Integer, Integer, Integer> quartet = new Quartet<Integer, Integer, Integer, Integer>(index1, index2 + 1, size1, size2);
+                            Quartet<Integer, Integer, Integer, Integer> quartet = new Quartet<>(index1, index2 + 1, size1, size2);
                             double delta = (alignmentParams.get(quartet) *
                                     translationParams.get(word1).get(word2)) / denom;
-                            Pair<String, String> pair = new Pair<String, String>(word1, word2);
+                            Pair<String, String> pair = new Pair<>(word1, word2);
                             if (c2.containsKey(pair)) {
                                 c2.put(pair, c2.get(pair) + delta);
                             } else {
@@ -89,7 +89,7 @@ public class IbmModel2 {
                             } else {
                                 c4.put(quartet, delta);
                             }
-                            Triplet<Integer, Integer, Integer> triplet1 = new Triplet<Integer, Integer, Integer>(index2 + 1, size1, size2);
+                            Triplet<Integer, Integer, Integer> triplet1 = new Triplet<>(index2 + 1, size1, size2);
                             if (c3.containsKey(triplet1)) {
                                 c3.put(triplet1, c3.get(triplet1) + delta);
                             } else {
@@ -112,7 +112,7 @@ public class IbmModel2 {
                 int index2 = quartet.getValue1();
                 int size1 = quartet.getValue2();
                 int size2 = quartet.getValue3();
-                Triplet<Integer, Integer, Integer> triplet = new Triplet<Integer, Integer, Integer>(index2, size1, size2);
+                Triplet<Integer, Integer, Integer> triplet = new Triplet<>(index2, size1, size2);
                 alignmentParams.put(quartet, c4.get(quartet) / c3.get(triplet));
             }
 
@@ -140,11 +140,11 @@ public class IbmModel2 {
         List<String> words1 = Arrays.asList(line1.split(" "));
         int size1 = words1.size();
 
-        List<String> nullPrefixedWords1 = new ArrayList<String>();
+        List<String> nullPrefixedWords1 = new ArrayList<>();
         nullPrefixedWords1.add(Utils.NULL);
         nullPrefixedWords1.addAll(words1);
 
-        List<Integer> list = new ArrayList<Integer>();
+        List<Integer> list = new ArrayList<>();
         for (int index2 = 0; index2 < words2.size(); index2++) {
             String word2 = words2.get(index2);
 
@@ -152,7 +152,7 @@ public class IbmModel2 {
             double maxValue = Double.MIN_VALUE;
             for (int index1 = 0; index1 < nullPrefixedWords1.size(); index1++) {
                 String word1 = nullPrefixedWords1.get(index1);
-                Quartet<Integer, Integer, Integer, Integer> quartet = new Quartet<Integer, Integer, Integer, Integer>(index1, index2 + 1, size1, size2);
+                Quartet<Integer, Integer, Integer, Integer> quartet = new Quartet<>(index1, index2 + 1, size1, size2);
                 double value = alignmentParams.get(quartet) * translationParams.get(word1).get(word2);
                 if (value > maxValue) {
                     maxIndex = index1;

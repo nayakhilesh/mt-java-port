@@ -20,7 +20,7 @@ public class DefaultTranslationParams {
 
     private static Map<String, Set<String>> getN(String lang1FilePath, String lang2FilePath) {
 
-        final Map<String, Set<String>> n = new HashMap<String, Set<String>>();
+        final Map<String, Set<String>> n = new HashMap<>();
 
         System.out.println("Initializing 'n':");
 
@@ -38,7 +38,7 @@ public class DefaultTranslationParams {
                             if (n.containsKey(word1)) {
                                 n.get(word1).addAll(Arrays.asList(line2.split(" ")));
                             } else {
-                                n.put(word1, new HashSet<String>(Arrays.asList(line2.split(" "))));
+                                n.put(word1, new HashSet<>(Arrays.asList(line2.split(" "))));
                             }
                         }
                         return null;
@@ -56,7 +56,7 @@ public class DefaultTranslationParams {
                                                                                              final Map<String, Set<String>> n) {
 
 
-        final Map<String, Map<String, Double>> translationParams = new HashMap<String, Map<String, Double>>();
+        final Map<String, Map<String, Double>> translationParams = new HashMap<>();
         final TranslationParamEstimator transParamEst = new TranslationParamEstimator();
 
         System.out.println("Initializing translationParams:");
@@ -76,7 +76,7 @@ public class DefaultTranslationParams {
                                 if (translationParams.containsKey(word1)) {
                                     translationParams.get(word1).put(word2, transParamEst.estimate(word1, n));
                                 } else {
-                                    Map<String, Double> map = new HashMap<String, Double>();
+                                    Map<String, Double> map = new HashMap<>();
                                     map.put(word2, transParamEst.estimate(word1, n));
                                     translationParams.put(word1, map);
                                 }
@@ -102,7 +102,7 @@ public class DefaultTranslationParams {
 
     private static class TranslationParamEstimator {
 
-        private Map<String, Double> cache = new HashMap<String, Double>();
+        private Map<String, Double> cache = new HashMap<>();
 
         public double estimate(String word1,
                                Map<String, Set<String>> n) {
