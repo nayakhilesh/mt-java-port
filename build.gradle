@@ -42,3 +42,9 @@ pmd {
 task wrapper(type: Wrapper) {
     gradleVersion = '2.2.1'
 }
+
+apply plugin:'application'
+mainClassName = "com.github.nayakhilesh.Main"
+run {
+    args(['corpus.en', 'corpus.es'])
+}
