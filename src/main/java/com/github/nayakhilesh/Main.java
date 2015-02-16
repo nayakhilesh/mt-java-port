@@ -11,7 +11,7 @@ public class Main {
 
     public static void main(String[] args) throws IOException {
 
-        //usage: corpus.en, corpus.es
+        //usage: corpus.en.txt corpus.es.txt
 
         long start = System.currentTimeMillis();
 

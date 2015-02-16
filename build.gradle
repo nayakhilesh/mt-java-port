@@ -46,5 +46,5 @@ task wrapper(type: Wrapper) {
 apply plugin:'application'
 mainClassName = "com.github.nayakhilesh.Main"
 run {
-    args(['corpus.en', 'corpus.es'])
+    args(['corpus.en.txt', 'corpus.es.txt'])
 }
