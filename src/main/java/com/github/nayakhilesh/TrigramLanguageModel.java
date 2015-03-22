@@ -4,7 +4,10 @@ import com.google.common.base.Charsets;
 import org.javatuples.Pair;
 import org.javatuples.Triplet;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.*;
 
 public class TrigramLanguageModel {

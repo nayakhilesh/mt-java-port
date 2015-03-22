@@ -4,7 +4,10 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import org.javatuples.Triplet;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;

@@ -1,9 +1,6 @@
 package com.github.nayakhilesh;
 
 import com.google.common.base.Joiner;
-import com.google.common.base.Optional;
-import com.google.common.base.Predicate;
-import com.google.common.collect.Iterators;
 import lombok.Value;
 import org.javatuples.Pair;
 
