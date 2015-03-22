@@ -11,6 +11,7 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 public class Utils {
 
@@ -43,6 +44,14 @@ public class Utils {
         words.addAll(Arrays.asList(prefixes));
         words.addAll(Arrays.asList(line.split(" ")));
         return words;
+    }
+
+    public static <A> void mapPutOrAdd(Map<A, Double> map, A key, Double value) {
+        if (map.containsKey(key)) {
+            map.put(key, map.get(key) + value);
+        } else {
+            map.put(key, value);
+        }
     }
 
 }

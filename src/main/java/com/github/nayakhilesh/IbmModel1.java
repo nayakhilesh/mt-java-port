@@ -10,6 +10,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.github.nayakhilesh.Utils.mapPutOrAdd;
+
 public class IbmModel1 {
 
     @Getter
@@ -56,16 +58,8 @@ public class IbmModel1 {
                         for (String word1 : words1) {
                             double delta = translationParams.get(word1).get(word2) / denom;
                             Pair<String, String> pair = new Pair<>(word1, word2);
-                            if (c2.containsKey(pair)) {
-                                c2.put(pair, c2.get(pair) + delta);
-                            } else {
-                                c2.put(pair, delta);
-                            }
-                            if (c1.containsKey(word1)) {
-                                c1.put(word1, c1.get(word1) + delta);
-                            } else {
-                                c1.put(word1, delta);
-                            }
+                            mapPutOrAdd(c2, pair, delta);
+                            mapPutOrAdd(c1, word1, delta);
                         }
 
                     }

@@ -8,6 +8,8 @@ import org.javatuples.Triplet;
 
 import java.util.*;
 
+import static com.github.nayakhilesh.Utils.mapPutOrAdd;
+
 public class IbmModel2 {
 
     private Map<String, Map<String, Double>> translationParams;
@@ -74,27 +76,11 @@ public class IbmModel2 {
                             double delta = (alignmentParams.get(quartet) *
                                     translationParams.get(word1).get(word2)) / denom;
                             Pair<String, String> pair = new Pair<>(word1, word2);
-                            if (c2.containsKey(pair)) {
-                                c2.put(pair, c2.get(pair) + delta);
-                            } else {
-                                c2.put(pair, delta);
-                            }
-                            if (c1.containsKey(word1)) {
-                                c1.put(word1, c1.get(word1) + delta);
-                            } else {
-                                c1.put(word1, delta);
-                            }
-                            if (c4.containsKey(quartet)) {
-                                c4.put(quartet, c4.get(quartet) + delta);
-                            } else {
-                                c4.put(quartet, delta);
-                            }
+                            mapPutOrAdd(c2, pair, delta);
+                            mapPutOrAdd(c1, word1, delta);
+                            mapPutOrAdd(c4, quartet, delta);
                             Triplet<Integer, Integer, Integer> triplet1 = new Triplet<>(index2 + 1, size1, size2);
-                            if (c3.containsKey(triplet1)) {
-                                c3.put(triplet1, c3.get(triplet1) + delta);
-                            } else {
-                                c3.put(triplet1, delta);
-                            }
+                            mapPutOrAdd(c3, triplet1, delta);
                         }
                     }
 
