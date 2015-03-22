@@ -46,7 +46,15 @@ public class Utils {
         return words;
     }
 
-    public static <A> void mapPutOrAdd(Map<A, Double> map, A key, Double value) {
+    public static <A> void mapPutOrAdd(Map<A, Double> map, A key, double value) {
+        if (map.containsKey(key)) {
+            map.put(key, map.get(key) + value);
+        } else {
+            map.put(key, value);
+        }
+    }
+
+    public static <A> void mapPutOrAdd(Map<A, Integer> map, A key, int value) {
         if (map.containsKey(key)) {
             map.put(key, map.get(key) + value);
         } else {

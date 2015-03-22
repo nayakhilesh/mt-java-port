@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.*;
 
+import static com.github.nayakhilesh.Utils.mapPutOrAdd;
+
 public class TrigramLanguageModel {
 
     // constants
@@ -39,7 +41,7 @@ public class TrigramLanguageModel {
         lambda3 = new ArrayList<>(NUM_PARTITIONS);
     }
 
-    private int countLines(String filePath) throws IOException {
+    private static int countLines(String filePath) throws IOException {
         int lines = 0;
         try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(filePath), Charsets.UTF_8))) {
             while (br.readLine() != null) {
@@ -74,25 +76,13 @@ public class TrigramLanguageModel {
                     String word2 = words.get(j);
                     String word3 = words.get(k);
 
-                    Triplet<String, String, String> Triplet = new Triplet<>(word1, word2, word3);
-                    if (c3.containsKey(Triplet)) {
-                        c3.put(Triplet, c3.get(Triplet) + 1);
-                    } else {
-                        c3.put(Triplet, 1);
-                    }
+                    Triplet<String, String, String> triplet = new Triplet<>(word1, word2, word3);
+                    mapPutOrAdd(c3, triplet, 1);
 
                     Pair<String, String> pair = new Pair<>(word2, word3);
-                    if (c2.containsKey(pair)) {
-                        c2.put(pair, c2.get(pair) + 1);
-                    } else {
-                        c2.put(pair, 1);
-                    }
+                    mapPutOrAdd(c2, pair, 1);
 
-                    if (c1.containsKey(word3)) {
-                        c1.put(word3, c1.get(word3) + 1);
-                    } else {
-                        c1.put(word3, 1);
-                    }
+                    mapPutOrAdd(c1, word3, 1);
                 }
 
                 lineNumber++;
@@ -117,12 +107,8 @@ public class TrigramLanguageModel {
                     String word2 = words.get(j);
                     String word3 = words.get(k);
 
-                    Triplet<String, String, String> Triplet = new Triplet<>(word1, word2, word3);
-                    if (cPrime.containsKey(Triplet)) {
-                        cPrime.put(Triplet, cPrime.get(Triplet) + 1);
-                    } else {
-                        cPrime.put(Triplet, 1);
-                    }
+                    Triplet<String, String, String> triplet = new Triplet<>(word1, word2, word3);
+                    mapPutOrAdd(cPrime, triplet, 1);
                 }
 
             }
@@ -250,9 +236,9 @@ public class TrigramLanguageModel {
         if (!c2.containsKey(pair)) {
             return 0.0;
         } else {
-            Triplet<String, String, String> Triplet = new Triplet<>(word1, word2, word3);
-            if (c3.containsKey(Triplet)) {
-                return ((double) c3.get(Triplet)) / ((double) c2.get(pair));
+            Triplet<String, String, String> triplet = new Triplet<>(word1, word2, word3);
+            if (c3.containsKey(triplet)) {
+                return ((double) c3.get(triplet)) / ((double) c2.get(pair));
             } else {
                 return 0.0;
             }
