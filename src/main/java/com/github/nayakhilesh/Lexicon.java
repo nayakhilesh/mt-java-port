@@ -4,6 +4,8 @@ import org.javatuples.Pair;
 
 import java.util.*;
 
+import static com.github.nayakhilesh.Utils.mapIncrementKey;
+
 public class Lexicon {
 
     private Map<List<String>, Set<List<String>>> translatedPairs;
@@ -55,17 +57,8 @@ public class Lexicon {
                                 translatedPairs.put(phraseLang1, set);
                             }
                             Pair<List<String>, List<String>> pair = new Pair<>(phraseLang2, phraseLang1);
-                            // TODO refactor into Maps.incrementKey
-                            if (c2.containsKey(pair)) {
-                                c2.put(pair, c2.get(pair) + 1);
-                            } else {
-                                c2.put(pair, 1);
-                            }
-                            if (c1.containsKey(phraseLang2)) {
-                                c1.put(phraseLang2, c1.get(phraseLang2) + 1);
-                            } else {
-                                c1.put(phraseLang2, 1);
-                            }
+                            mapIncrementKey(c2, pair);
+                            mapIncrementKey(c1, phraseLang2);
                             //g(e,f) = log c(f,e)/c(f)
                             //e to f translation
                         }

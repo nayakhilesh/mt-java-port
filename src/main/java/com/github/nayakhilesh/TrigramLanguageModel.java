@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.*;
 
-import static com.github.nayakhilesh.Utils.mapPutOrAdd;
+import static com.github.nayakhilesh.Utils.mapIncrementKey;
 
 public class TrigramLanguageModel {
 
@@ -77,12 +77,12 @@ public class TrigramLanguageModel {
                     String word3 = words.get(k);
 
                     Triplet<String, String, String> triplet = new Triplet<>(word1, word2, word3);
-                    mapPutOrAdd(c3, triplet, 1);
+                    mapIncrementKey(c3, triplet);
 
                     Pair<String, String> pair = new Pair<>(word2, word3);
-                    mapPutOrAdd(c2, pair, 1);
+                    mapIncrementKey(c2, pair);
 
-                    mapPutOrAdd(c1, word3, 1);
+                    mapIncrementKey(c1, word3);
                 }
 
                 lineNumber++;
@@ -108,7 +108,7 @@ public class TrigramLanguageModel {
                     String word3 = words.get(k);
 
                     Triplet<String, String, String> triplet = new Triplet<>(word1, word2, word3);
-                    mapPutOrAdd(cPrime, triplet, 1);
+                    mapIncrementKey(cPrime, triplet);
                 }
 
             }

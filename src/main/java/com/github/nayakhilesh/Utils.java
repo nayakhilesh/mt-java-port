@@ -54,11 +54,11 @@ public class Utils {
         }
     }
 
-    public static <A> void mapPutOrAdd(Map<A, Integer> map, A key, int value) {
+    public static <A> void mapIncrementKey(Map<A, Integer> map, A key) {
         if (map.containsKey(key)) {
-            map.put(key, map.get(key) + value);
+            map.put(key, map.get(key) + 1);
         } else {
-            map.put(key, value);
+            map.put(key, 1);
         }
     }
 
